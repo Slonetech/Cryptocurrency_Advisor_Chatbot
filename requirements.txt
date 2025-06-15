@@ -1,0 +1,11 @@
+flask==2.0.1
+flask-sqlalchemy==2.5.1
+flask-login==0.5.0
+flask-cors==3.0.10
+werkzeug==2.0.3
+requests==2.26.0
+python-dotenv==0.19.0
+openai==0.27.0
+sqlalchemy==1.4.23
+nltk==3.8.1
+gunicorn==21.2.0 

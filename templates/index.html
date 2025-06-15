@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slone_cryptoBuddy - Your AI Crypto Advisor</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message {
+            max-width: 80%;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: auto;
+        }
+        .typing-indicator {
+            display: none;
+        }
+        .typing-indicator span {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-600 mb-2">
+                <i class="fas fa-robot mr-2"></i>Slone_cryptoBuddy
+            </h1>
+            <p class="text-gray-600">Your AI-powered cryptocurrency advisor</p>
+        </header>
+
+        <!-- Market Analysis Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Market Cap Distribution -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-chart-pie mr-2"></i>Market Cap Distribution
+                </h2>
+                <div class="chart-container">
+                    <canvas id="marketCapChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Price Trends -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-chart-line mr-2"></i>Price Trends
+                </h2>
+                <div class="chart-container">
+                    <canvas id="priceTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Market Overview Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-chart-line mr-2"></i>Market Overview
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-sm font-medium text-blue-600">Total Market Cap</h3>
+                        <p id="totalMarketCap" class="text-2xl font-bold text-blue-700">Loading...</p>
+                        <p class="text-sm text-blue-500">All cryptocurrencies combined</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="text-sm font-medium text-green-600">24h Volume</h3>
+                        <p id="totalVolume" class="text-2xl font-bold text-green-700">Loading...</p>
+                        <p class="text-sm text-green-500">Total trading volume</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="text-sm font-medium text-purple-600">BTC Dominance</h3>
+                        <p id="btcDominance" class="text-2xl font-bold text-purple-700">Loading...</p>
+                        <p class="text-sm text-purple-500">Bitcoin's market share</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h3 class="text-sm font-medium text-gray-600 mb-2">Top 5 Cryptocurrencies</h3>
+                    <div id="topCoins" class="space-y-2">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div class="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trending Coins Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-fire mr-2"></i>Trending Now
+                </h2>
+                <div id="trending-coins" class="space-y-4">
+                    <div class="animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-bolt mr-2"></i>Quick Actions
+                </h2>
+                <div class="space-y-2">
+                    <button onclick="askQuestion('What are the most sustainable cryptocurrencies?')" 
+                            class="w-full text-left px-4 py-2 rounded bg-blue-50 hover:bg-blue-100 transition">
+                        <i class="fas fa-leaf mr-2"></i>Sustainable Options
+                    </button>
+                    <button onclick="askQuestion('Show me market insights')"
+                            class="w-full text-left px-4 py-2 rounded bg-blue-50 hover:bg-blue-100 transition">
+                        <i class="fas fa-chart-pie mr-2"></i>Market Insights
+                    </button>
+                    <button onclick="askQuestion('Give me a conservative investment strategy for $1000')"
+                            class="w-full text-left px-4 py-2 rounded bg-blue-50 hover:bg-blue-100 transition">
+                        <i class="fas fa-wallet mr-2"></i>Investment Strategy
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Insights Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-robot mr-2"></i>AI Insights
+                </h2>
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-blue-700 mb-2">Market Sentiment</h3>
+                        <div id="marketSentiment" class="text-sm text-gray-600">
+                            Analyzing market sentiment...
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-green-700 mb-2">Sustainability Score</h3>
+                        <div id="sustainabilityScore" class="text-sm text-gray-600">
+                            Calculating sustainability metrics...
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-purple-700 mb-2">Risk Assessment</h3>
+                        <div id="riskAssessment" class="text-sm text-gray-600">
+                            Evaluating market risks...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <div class="flex-1 flex flex-col">
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <!-- Messages will be added here -->
+                </div>
+                <form id="chat-form" class="p-4 border-t">
+                    <div class="flex space-x-2">
+                        <input type="text" id="user-input"
+                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ask me anything about cryptocurrencies...">
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication status
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to check authentication');
+                }
+                
+                const data = await response.json();
+                return true;
+            } catch (error) {
+                console.error('Error checking auth:', error);
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // Initialize charts
+        let marketCapChart, priceTrendChart;
+        
+        function initCharts() {
+            // Market Cap Distribution Chart
+            const marketCapCtx = document.getElementById('marketCapChart').getContext('2d');
+            marketCapChart = new Chart(marketCapCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Price Trend Chart
+            const priceTrendCtx = document.getElementById('priceTrendChart').getContext('2d');
+            priceTrendChart = new Chart(priceTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Price Trend',
+                        data: [],
+                        borderColor: '#36A2EB',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with market data
+        function updateCharts(marketData) {
+            // Update Market Cap Chart
+            const topCoins = marketData.coins.slice(0, 5);
+            marketCapChart.data.labels = topCoins.map(coin => coin.symbol.toUpperCase());
+            marketCapChart.data.datasets[0].data = topCoins.map(coin => coin.market_cap);
+            marketCapChart.update();
+
+            // Update Price Trend Chart
+            const priceData = marketData.coins.map(coin => ({
+                label: coin.symbol.toUpperCase(),
+                data: coin.price_change_percentage_24h
+            }));
+            priceTrendChart.data.labels = priceData.map(d => d.label);
+            priceTrendChart.data.datasets[0].data = priceData.map(d => d.data);
+            priceTrendChart.update();
+        }
+
+        // Update AI insights
+        function updateAIInsights(data) {
+            // Update market sentiment
+            const sentimentElement = document.getElementById('marketSentiment');
+            const marketHealth = data.coins.filter(coin => coin.price_change_percentage_24h > 0).length > data.coins.length/2 ? 'bullish' : 'bearish';
+            sentimentElement.innerHTML = `
+                <p>Current market sentiment is <span class="font-medium ${marketHealth === 'bullish' ? 'text-green-600' : 'text-red-600'}">${marketHealth.toUpperCase()}</span></p>
+                <p class="mt-1">${data.coins.length} cryptocurrencies analyzed</p>
+            `;
+
+            // Update sustainability score
+            const sustainabilityElement = document.getElementById('sustainabilityScore');
+            const sustainableCoins = data.coins.filter(coin => coin.sustainability_score >= 7.0);
+            sustainabilityElement.innerHTML = `
+                <p>${sustainableCoins.length} cryptocurrencies meet sustainability criteria</p>
+                <p class="mt-1">Top sustainable: ${sustainableCoins.slice(0, 3).map(coin => coin.name).join(', ')}</p>
+            `;
+
+            // Update risk assessment
+            const riskElement = document.getElementById('riskAssessment');
+            const highRiskCoins = data.coins.filter(coin => coin.price_change_percentage_24h < -5);
+            riskElement.innerHTML = `
+                <p>${highRiskCoins.length} cryptocurrencies showing high volatility</p>
+                <p class="mt-1">Market stability: ${highRiskCoins.length < 3 ? 'Good' : 'Caution advised'}</p>
+            `;
+        }
+
+        // Update the fetchMarketData function to include AI insights
+        async function fetchMarketData() {
+            if (!await checkAuth()) return;
+            
+            try {
+                const response = await fetch('/api/market-data', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch market data');
+                }
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                updateCharts(data);
+                updateMarketOverview(data);
+                updateAIInsights(data);
+            } catch (error) {
+                console.error('Error fetching market data:', error);
+            }
+        }
+
+        // Fetch trending coins
+        async function fetchTrendingCoins() {
+            if (!await checkAuth()) return;
+            
+            try {
+                const response = await fetch('/api/trending', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch trending coins');
+                }
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                updateTrendingCoins(data);
+            } catch (error) {
+                console.error('Error fetching trending coins:', error);
+            }
+        }
+
+        // Update market overview
+        function updateMarketOverview(data) {
+            document.getElementById('totalMarketCap').textContent = formatCurrency(data.total_market_cap);
+            document.getElementById('totalVolume').textContent = formatCurrency(data.total_volume);
+            document.getElementById('btcDominance').textContent = data.btc_dominance.toFixed(2) + '%';
+            
+            // Update top coins
+            const topCoinsContainer = document.getElementById('topCoins');
+            topCoinsContainer.innerHTML = data.coins.slice(0, 5).map(coin => `
+                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-2">
+                            <img src="/static/images/crypto/${coin.id === 'ripple' ? 'xrp' : coin.id === 'matic-network' ? 'polygon' : coin.id}.png" 
+                                 alt="${coin.name} logo"
+                                 class="w-8 h-8 rounded-full"
+                                 onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
+                            <div>
+                                <h4 class="font-medium">${coin.name}</h4>
+                                <p class="text-sm text-gray-500">${coin.symbol.toUpperCase()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium">${formatCurrency(coin.current_price)}</p>
+                        <p class="text-sm ${coin.price_change_percentage_24h >= 0 ? 'text-green-500' : 'text-red-500'}">
+                            ${coin.price_change_percentage_24h.toFixed(2)}%
+                        </p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update trending coins
+        function updateTrendingCoins(data) {
+            const container = document.getElementById('trending-coins');
+            container.innerHTML = data.map(coin => `
+                <div class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2">
+                                <img src="/static/images/crypto/${coin.id === 'ripple' ? 'xrp' : coin.id === 'matic-network' ? 'polygon' : coin.id}.png" 
+                                     alt="${coin.name} logo"
+                                     class="w-8 h-8 rounded-full"
+                                     onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
+                                <div>
+                                    <h4 class="font-semibold">${coin.name}</h4>
+                                    <p class="text-sm text-gray-500">Rank #${coin.market_cap_rank}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm ${coin.price_change_percentage_24h >= 0 ? 'text-green-500' : 'text-red-500'}">
+                                ${coin.price_change_percentage_24h.toFixed(2)}%
+                            </p>
+                            <p class="text-xs text-gray-500">24h Change</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        // Quick action buttons
+        function askQuestion(question) {
+            const input = document.getElementById('user-input');
+            input.value = question;
+            const event = new Event('submit');
+            document.getElementById('chat-form').dispatchEvent(event);
+        }
+
+        // Handle chat form submission
+        document.getElementById('chat-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!await checkAuth()) return;
+            
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            input.value = '';
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ query: message })
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get response');
+                }
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                addMessageToChat('bot', data.response);
+            } catch (error) {
+                console.error('Error:', error);
+                addMessageToChat('bot', 'Sorry, I encountered an error. Please try again.');
+            }
+        });
+
+        // Add message to chat
+        function addMessageToChat(sender, message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
+            
+            messageDiv.innerHTML = `
+                <div class="max-w-[70%] ${sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'} rounded-lg p-3">
+                    ${message}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (await checkAuth()) {
+                initCharts();
+                await fetchMarketData();
+                await fetchTrendingCoins();
+                
+                // Refresh data every 5 minutes
+                setInterval(fetchMarketData, 300000);
+                setInterval(fetchTrendingCoins, 300000);
+            }
+        });
+    </script>
+</body>
+</html> 
