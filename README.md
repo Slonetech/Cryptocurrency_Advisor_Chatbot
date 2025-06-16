@@ -13,7 +13,7 @@ An intelligent chatbot that provides cryptocurrency investment advice based on p
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/Cryptocurrency_Advisor_Chatbot.git
+git clone https://github.com/Slonetech/Cryptocurrency_Advisor_Chatbot.git
 cd Cryptocurrency_Advisor_Chatbot
 ```
 
