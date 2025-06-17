@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, abort, send_from_directory
+# app.py
+from flask import Flask, request, jsonify, render_template, redirect, url_for, abort, send_from_directory, session
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -6,10 +7,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import logging
+from dotenv import load_dotenv
+
+# Import the CryptoAdvisor class and CryptoAPI class
 from crypto_advisor import CryptoAdvisor
 from crypto_api import CryptoAPI
-from models import db, User
-import requests
+from models import db, User # Assuming models.py correctly defines db and User
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -27,10 +33,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///crypto_buddy.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize extensions
-db.init_app(app)
+db.init_app(app) # Initialize SQLAlchemy with the Flask app
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(app) # Initialize LoginManager with the Flask app
 login_manager.login_view = 'login'
+
+# For Flask-Session, if you intend to use it for server-side sessions
+# If you don't explicitly use `session` from `flask_session`, you might not need this.
+# app.config['SESSION_TYPE'] = 'filesystem' # Or 'sqlalchemy', 'redis', etc.
+# from flask_session import Session
+# Session(app) # Initialize Flask-Session with the Flask app
+
 
 # Create database tables
 with app.app_context():
@@ -38,8 +51,9 @@ with app.app_context():
     logger.info("Database tables created successfully")
 
 # Initialize crypto components
-crypto_advisor = CryptoAdvisor()
+# Pass the crypto_api instance to CryptoAdvisor, as it depends on it.
 crypto_api = CryptoAPI()
+crypto_advisor = CryptoAdvisor(crypto_api_instance=crypto_api)
 
 # Serve static files
 @app.route('/static/images/crypto/<path:filename>')
@@ -91,29 +105,23 @@ def register():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 
-        # Validate required fields
         required_fields = ['username', 'email', 'password']
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({'error': f'{field} is required'}), 400
 
-        # Validate email format
         if '@' not in data['email'] or '.' not in data['email']:
             return jsonify({'error': 'Invalid email format'}), 400
 
-        # Validate password length
         if len(data['password']) < 6:
             return jsonify({'error': 'Password must be at least 6 characters long'}), 400
 
-        # Check if username exists
         if User.query.filter_by(username=data['username']).first():
             return jsonify({'error': 'Username already exists'}), 400
 
-        # Check if email exists
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'error': 'Email already exists'}), 400
 
-        # Create new user
         user = User(
             username=data['username'],
             email=data['email']
@@ -123,7 +131,6 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        # Log in the new user
         login_user(user)
         return jsonify(user.to_dict())
 
@@ -140,7 +147,6 @@ def login_api():
             logger.warning("Login attempt with no data provided")
             return jsonify({'error': 'No data provided'}), 400
 
-        # Validate required fields
         if 'username' not in data or 'password' not in data:
             logger.warning("Login attempt with missing fields")
             return jsonify({'error': 'Username and password are required'}), 400
@@ -187,6 +193,7 @@ def query():
             return jsonify({'error': 'No query provided'}), 400
             
         query = data['query']
+        # Call the process_query method on the crypto_advisor instance
         response = crypto_advisor.process_query(query)
         return jsonify({'response': response})
     except Exception as e:
@@ -197,6 +204,7 @@ def query():
 @login_required
 def market_data():
     try:
+        # Call the get_market_data method on the crypto_api instance
         data = crypto_api.get_market_data()
         if not data:
             return jsonify({'error': 'Failed to fetch market data'}), 500
@@ -209,36 +217,35 @@ def market_data():
 @login_required
 def get_trending():
     try:
-        # Get trending coins from CoinGecko
-        response = requests.get('https://api.coingecko.com/api/v3/search/trending')
-        if response.status_code == 200:
-            data = response.json()
-            trending_coins = []
-            
-            for coin in data.get('coins', [])[:5]:  # Get top 5 trending coins
-                item = coin.get('item', {})
-                trending_coins.append({
-                    'id': item.get('id'),
-                    'name': item.get('name'),
-                    'symbol': item.get('symbol'),
-                    'market_cap_rank': item.get('market_cap_rank'),
-                    'price_btc': item.get('price_btc'),
-                    'score': item.get('score')
-                })
-            
-            return jsonify(trending_coins)
-        else:
-            logger.error(f"Failed to fetch trending coins: {response.status_code}")
-            return jsonify({'error': 'Failed to fetch trending coins'}), 500
+        # Call the get_trending_coins method on the crypto_api instance
+        data = crypto_api.get_trending_coins()
+        if not data: # crypto_api.get_trending_coins already returns an empty list if there's an error
+            return jsonify({'trending_coins': []}) # Return an empty list to frontend
+        
+        # Limit to top 5, as in your original app.py logic
+        trending_coins_formatted = []
+        for coin in data[:5]:
+            trending_coins_formatted.append({
+                'id': coin.get('id'),
+                'name': coin.get('name'),
+                'symbol': coin.get('symbol'),
+                'market_cap_rank': coin.get('market_cap_rank'),
+                'price_btc': coin.get('price_btc'), # crypto_api.py's get_trending_coins doesn't directly return price_btc
+                'score': coin.get('score'), # crypto_api.py's get_trending_coins doesn't directly return score
+                'price_change_percentage_24h': coin.get('price_change_percentage_24h', 0) # This comes from the market data merge in CryptoAdvisor
+            })
+
+        return jsonify(trending_coins_formatted)
             
     except Exception as e:
-        logger.error(f"Error in get_trending: {str(e)}")
+        logger.error(f"Error in get_trending: {str(e)}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/coin/<coin_id>')
 @login_required
 def coin_info(coin_id):
     try:
+        # Call the get_coin_info method on the crypto_api instance
         data = crypto_api.get_coin_info(coin_id)
         if not data:
             return jsonify({'error': 'Failed to fetch coin information'}), 500
@@ -252,6 +259,7 @@ def coin_info(coin_id):
 def coin_history(coin_id):
     try:
         days = request.args.get('days', default=30, type=int)
+        # Call the get_coin_history method on the crypto_api instance
         data = crypto_api.get_coin_history(coin_id, days)
         if not data:
             return jsonify({'error': 'Failed to fetch coin history'}), 500
@@ -261,4 +269,4 @@ def coin_history(coin_id):
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)

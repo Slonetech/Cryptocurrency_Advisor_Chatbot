@@ -27,9 +27,20 @@
         }
         .typing-indicator {
             display: none;
+            align-items: center;
+            margin-left: 10px;
+            color: #888;
         }
         .typing-indicator span {
             animation: blink 1s infinite;
+            font-size: 2em; /* Make dots larger */
+            line-height: 0.5; /* Adjust line height to align dots */
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
         }
         @keyframes blink {
             50% { opacity: 0; }
@@ -49,15 +60,17 @@
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-blue-600 mb-2">
+            <h1 class="text-4xl font-bold text-blue-600 mb-2 flex items-center justify-center">
                 <i class="fas fa-robot mr-2"></i>Slone_cryptoBuddy
             </h1>
             <p class="text-gray-600">Your AI-powered cryptocurrency advisor</p>
+            <p id="user-email" class="text-gray-500 text-sm mt-2"></p>
+            <button id="logout-button" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
         </header>
 
-        <!-- Market Analysis Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Market Cap Distribution -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-chart-pie mr-2"></i>Market Cap Distribution
@@ -67,7 +80,6 @@
                 </div>
             </div>
 
-            <!-- Price Trends -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-chart-line mr-2"></i>Price Trends
@@ -79,7 +91,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Market Overview Card -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-chart-line mr-2"></i>Market Overview
@@ -112,7 +123,6 @@
                 </div>
             </div>
 
-            <!-- Trending Coins Card -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-fire mr-2"></i>Trending Now
@@ -125,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-bolt mr-2"></i>Quick Actions
@@ -146,7 +155,6 @@
                 </div>
             </div>
 
-            <!-- AI Insights Card -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h2 class="text-xl font-semibold mb-4">
                     <i class="fas fa-robot mr-2"></i>AI Insights
@@ -174,23 +182,25 @@
             </div>
         </div>
 
-        <!-- Chat Interface -->
-        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
-            <div class="flex-1 flex flex-col">
-                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <!-- Messages will be added here -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg p-6 flex flex-col h-[60vh]">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
                 </div>
-                <form id="chat-form" class="p-4 border-t">
-                    <div class="flex space-x-2">
-                        <input type="text" id="user-input"
-                            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ask me anything about cryptocurrencies...">
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" title="Send message">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </form>
+            <div id="typing-indicator" class="typing-indicator mb-2">
+                <span>.</span><span>.</span><span>.</span>
             </div>
+            <form id="chat-form" class="p-4 border-t">
+                <div class="flex space-x-2">
+                    <button type="button" id="new-chat-button" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors" title="Start new chat">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <input type="text" id="user-input"
+                        class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ask me anything about cryptocurrencies...">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" title="Send message">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -216,6 +226,7 @@
                 }
                 
                 const data = await response.json();
+                document.getElementById('user-email').textContent = `Logged in as: ${data.email}`;
                 return true;
             } catch (error) {
                 console.error('Error checking auth:', error);
@@ -223,6 +234,28 @@
                 return false;
             }
         }
+
+        // Logout function
+        document.getElementById('logout-button').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+                alert('An error occurred during logout.');
+            }
+        });
 
         // Initialize charts
         let marketCapChart, priceTrendChart;
@@ -262,10 +295,11 @@
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'Price Trend',
+                        label: 'Price Trend (24h Change)',
                         data: [],
                         borderColor: '#36A2EB',
-                        tension: 0.1
+                        tension: 0.1,
+                        fill: false
                     }]
                 },
                 options: {
@@ -277,7 +311,17 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: false
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Price Change (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Cryptocurrency'
+                            }
                         }
                     }
                 }
@@ -287,18 +331,15 @@
         // Update charts with market data
         function updateCharts(marketData) {
             // Update Market Cap Chart
-            const topCoins = marketData.coins.slice(0, 5);
-            marketCapChart.data.labels = topCoins.map(coin => coin.symbol.toUpperCase());
-            marketCapChart.data.datasets[0].data = topCoins.map(coin => coin.market_cap);
+            const topCoinsForMarketCap = marketData.coins.slice(0, 5);
+            marketCapChart.data.labels = topCoinsForMarketCap.map(coin => coin.symbol.toUpperCase());
+            marketCapChart.data.datasets[0].data = topCoinsForMarketCap.map(coin => coin.market_cap);
             marketCapChart.update();
 
-            // Update Price Trend Chart
-            const priceData = marketData.coins.map(coin => ({
-                label: coin.symbol.toUpperCase(),
-                data: coin.price_change_percentage_24h
-            }));
-            priceTrendChart.data.labels = priceData.map(d => d.label);
-            priceTrendChart.data.datasets[0].data = priceData.map(d => d.data);
+            // Update Price Trend Chart - using top 10 coins for a clearer trend
+            const topCoinsForPriceTrend = marketData.coins.slice(0, 10);
+            priceTrendChart.data.labels = topCoinsForPriceTrend.map(coin => coin.symbol.toUpperCase());
+            priceTrendChart.data.datasets[0].data = topCoinsForPriceTrend.map(coin => coin.price_change_percentage_24h);
             priceTrendChart.update();
         }
 
@@ -306,7 +347,7 @@
         function updateAIInsights(data) {
             // Update market sentiment
             const sentimentElement = document.getElementById('marketSentiment');
-            const marketHealth = data.coins.filter(coin => coin.price_change_percentage_24h > 0).length > data.coins.length/2 ? 'bullish' : 'bearish';
+            const marketHealth = data.coins.filter(coin => coin.price_change_percentage_24h > 0).length > data.coins.length / 2 ? 'bullish' : 'bearish';
             sentimentElement.innerHTML = `
                 <p>Current market sentiment is <span class="font-medium ${marketHealth === 'bullish' ? 'text-green-600' : 'text-red-600'}">${marketHealth.toUpperCase()}</span></p>
                 <p class="mt-1">${data.coins.length} cryptocurrencies analyzed</p>
@@ -314,10 +355,10 @@
 
             // Update sustainability score
             const sustainabilityElement = document.getElementById('sustainabilityScore');
-            const sustainableCoins = data.coins.filter(coin => coin.sustainability_score >= 7.0);
+            const sustainableCoins = data.coins.filter(coin => coin.sustainability_score && coin.sustainability_score >= 7.0); // Check for sustainability_score existence
             sustainabilityElement.innerHTML = `
                 <p>${sustainableCoins.length} cryptocurrencies meet sustainability criteria</p>
-                <p class="mt-1">Top sustainable: ${sustainableCoins.slice(0, 3).map(coin => coin.name).join(', ')}</p>
+                <p class="mt-1">Top sustainable: ${sustainableCoins.length > 0 ? sustainableCoins.slice(0, 3).map(coin => coin.name).join(', ') : 'N/A'}</p>
             `;
 
             // Update risk assessment
@@ -361,6 +402,14 @@
                 updateAIInsights(data);
             } catch (error) {
                 console.error('Error fetching market data:', error);
+                document.getElementById('totalMarketCap').textContent = 'Error';
+                document.getElementById('totalVolume').textContent = 'Error';
+                document.getElementById('btcDominance').textContent = 'Error';
+                document.getElementById('topCoins').innerHTML = '<p class="text-red-500">Failed to load top coins.</p>';
+                document.getElementById('marketSentiment').textContent = 'Error analyzing sentiment.';
+                document.getElementById('sustainabilityScore').textContent = 'Error calculating sustainability.';
+                document.getElementById('riskAssessment').textContent = 'Error evaluating risks.';
+
             }
         }
 
@@ -394,6 +443,7 @@
                 updateTrendingCoins(data);
             } catch (error) {
                 console.error('Error fetching trending coins:', error);
+                document.getElementById('trending-coins').innerHTML = '<p class="text-red-500">Failed to load trending coins.</p>';
             }
         }
 
@@ -410,9 +460,9 @@
                     <div class="flex items-center space-x-3">
                         <div class="flex items-center space-x-2">
                             <img src="/static/images/crypto/${coin.id === 'ripple' ? 'xrp' : coin.id === 'matic-network' ? 'polygon' : coin.id}.png" 
-                                 alt="${coin.name} logo"
-                                 class="w-8 h-8 rounded-full"
-                                 onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
+                                    alt="${coin.name} logo"
+                                    class="w-8 h-8 rounded-full"
+                                    onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
                             <div>
                                 <h4 class="font-medium">${coin.name}</h4>
                                 <p class="text-sm text-gray-500">${coin.symbol.toUpperCase()}</p>
@@ -438,9 +488,9 @@
                         <div class="flex items-center space-x-3">
                             <div class="flex items-center space-x-2">
                                 <img src="/static/images/crypto/${coin.id === 'ripple' ? 'xrp' : coin.id === 'matic-network' ? 'polygon' : coin.id}.png" 
-                                     alt="${coin.name} logo"
-                                     class="w-8 h-8 rounded-full"
-                                     onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
+                                            alt="${coin.name} logo"
+                                            class="w-8 h-8 rounded-full"
+                                            onerror="this.onerror=null; this.src='/static/images/crypto/default.png'">
                                 <div>
                                     <h4 class="font-semibold">${coin.name}</h4>
                                     <p class="text-sm text-gray-500">Rank #${coin.market_cap_rank}</p>
@@ -491,6 +541,9 @@
             addMessageToChat('user', message);
             input.value = '';
             
+            // Show typing indicator
+            document.getElementById('typing-indicator').style.display = 'flex';
+
             try {
                 const response = await fetch('/api/query', {
                     method: 'POST',
@@ -518,7 +571,10 @@
                 addMessageToChat('bot', data.response);
             } catch (error) {
                 console.error('Error:', error);
-                addMessageToChat('bot', 'Sorry, I encountered an error. Please try again.');
+                addMessageToChat('bot', 'Sorry, I encountered an error. Please try again. ' + error.message);
+            } finally {
+                // Hide typing indicator
+                document.getElementById('typing-indicator').style.display = 'none';
             }
         });
 
@@ -538,6 +594,12 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // New chat button functionality
+        document.getElementById('new-chat-button').addEventListener('click', () => {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = ''; // Clear all messages
+        });
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             if (await checkAuth()) {
@@ -552,4 +614,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

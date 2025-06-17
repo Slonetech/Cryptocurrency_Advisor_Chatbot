@@ -20,7 +20,7 @@ cd Cryptocurrency_Advisor_Chatbot
 2. Create a virtual environment (recommended):
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+On Windows: venv\Scripts\activate # on linux :source venv/bin/activate  
 ```
 
 3. Install dependencies:
